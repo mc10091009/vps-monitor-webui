@@ -16,9 +16,11 @@ audit_retention_days = 90
 max_failed_logins = 5
 lockout_minutes = 15
 
-# Path globs for PM2 log discovery (used when running user is not the PM2 user).
-# If empty, fall back to `~/.pm2/logs` of the running user.
-pm2_log_dirs = []
+# PM2 home directories to scan (one per user that runs PM2).
+# When empty, vps-monitor auto-discovers /root/.pm2 and /home/*/.pm2.
+# Make sure the vps-monitor user has read+execute access on these dirs:
+#   sudo setfacl -R -m u:vps-monitor:rX /root/.pm2
+pm2_homes = []
 
 # Optional: override default docker socket path
 # docker_socket = "/var/run/docker.sock"

@@ -88,7 +88,45 @@ chmod 750 "$DATA_DIR"
 echo ">> installing systemd unit"
 install -m 644 "$REPO_DIR/systemd/vps-monitor.service" /etc/systemd/system/
 
-# 5. migrate + create initial admin if no users
+# 5. grant vps-monitor read access to PM2 home directories (per-user PM2 daemons)
+PM2_HOMES=()
+for candidate in /root/.pm2 /home/*/.pm2; do
+  if [[ -d "$candidate" ]] && { [[ -f "$candidate/pm2.pid" ]] || [[ -f "$candidate/dump.pm2" ]]; }; then
+    PM2_HOMES+=("$candidate")
+  fi
+done
+
+if [[ ${#PM2_HOMES[@]} -gt 0 ]]; then
+  echo ">> found PM2 homes: ${PM2_HOMES[*]}"
+  if ! command -v setfacl >/dev/null; then
+    echo ">> installing acl package (needed to grant scoped read access)…"
+    if   command -v apt-get >/dev/null; then apt-get install -y acl
+    elif command -v dnf     >/dev/null; then dnf install -y acl
+    elif command -v yum     >/dev/null; then yum install -y acl
+    elif command -v apk     >/dev/null; then apk add --no-cache acl
+    fi
+  fi
+  if command -v setfacl >/dev/null; then
+    for home in "${PM2_HOMES[@]}"; do
+      # vps-monitor needs r-x on dir, r on files; setfacl -X applies to dirs only.
+      setfacl -R  -m u:"$USER_NAME":rX "$home" 2>/dev/null || true
+      setfacl -dR -m u:"$USER_NAME":rX "$home" 2>/dev/null || true
+      # Ensure path traversal is allowed.
+      parent="$(dirname "$home")"
+      [[ "$parent" != "/" ]] && setfacl -m u:"$USER_NAME":x "$parent" 2>/dev/null || true
+      echo "   -> ACL set on $home"
+    done
+  else
+    echo "   ! setfacl not available — falling back to chmod o+rX (less precise)"
+    for home in "${PM2_HOMES[@]}"; do
+      chmod -R o+rX "$home" 2>/dev/null || true
+    done
+  fi
+else
+  echo ">> no PM2 homes detected (this is fine if you don't use PM2)"
+fi
+
+# 6. migrate + create initial admin if no users
 echo ">> applying migrations"
 sudo -u "$USER_NAME" "$BIN_DST" migrate --db "$DATA_DIR/db.sqlite"
 
@@ -98,7 +136,7 @@ if [[ "$(sudo -u "$USER_NAME" "$BIN_DST" user-list --db "$DATA_DIR/db.sqlite" | 
   sudo -u "$USER_NAME" "$BIN_DST" user-add "$ADMIN" --db "$DATA_DIR/db.sqlite"
 fi
 
-# 6. enable + start
+# 7. enable + start
 systemctl daemon-reload
 systemctl enable --now vps-monitor.service
 

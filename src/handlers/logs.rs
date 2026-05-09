@@ -51,7 +51,7 @@ pub async fn ws_pm2(
     if !PM2_NAME_RE.is_match(&name) {
         return Err(AppError::BadRequest("invalid pm2 name".into()));
     }
-    let app = pm2::find(&name)
+    let app = pm2::find(&name, &state.cfg.pm2_homes)
         .await
         .map_err(AppError::Other)?
         .ok_or(AppError::NotFound)?;

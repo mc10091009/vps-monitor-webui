@@ -21,7 +21,7 @@ pub struct Config {
     pub lockout_minutes: u64,
 
     #[serde(default)]
-    pub pm2_log_dirs: Vec<PathBuf>,
+    pub pm2_homes: Vec<PathBuf>,
 
     pub docker_socket: Option<PathBuf>,
 }

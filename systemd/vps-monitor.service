@@ -25,7 +25,9 @@ NoNewPrivileges=true
 PrivateTmp=true
 PrivateDevices=true
 ProtectSystem=strict
-ProtectHome=true
+# read-only (not 'true') so we can stat PM2 home dirs and the daemon socket
+# in /root/.pm2 and /home/*/.pm2. Writes are still blocked.
+ProtectHome=read-only
 ReadWritePaths=/var/lib/vps-monitor
 ProtectKernelTunables=true
 ProtectKernelModules=true
