@@ -56,7 +56,7 @@ pub struct SystemCollector {
 impl SystemCollector {
     pub fn new() -> Self {
         let sys = System::new_with_specifics(
-            RefreshKind::nothing()
+            RefreshKind::new()
                 .with_cpu(CpuRefreshKind::everything())
                 .with_memory(MemoryRefreshKind::everything())
                 .with_processes(ProcessRefreshKind::everything()),
@@ -91,10 +91,10 @@ impl SystemCollector {
         sys.refresh_processes(sysinfo::ProcessesToUpdate::All, true);
 
         let mut disks = self.disks.write().await;
-        disks.refresh(true);
+        disks.refresh();
 
         let mut nets = self.networks.write().await;
-        nets.refresh(true);
+        nets.refresh();
 
         let cpu_per_core: Vec<f32> = sys.cpus().iter().map(|c| c.cpu_usage()).collect();
         let cpu_percent = if cpu_per_core.is_empty() {
