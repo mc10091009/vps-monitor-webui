@@ -138,7 +138,8 @@ fi
 
 # 7. enable + start
 systemctl daemon-reload
-systemctl enable --now vps-monitor.service
+systemctl enable vps-monitor.service
+systemctl restart vps-monitor.service
 
 echo ""
 echo "Done. Service started."
