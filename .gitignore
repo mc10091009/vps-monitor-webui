@@ -1,0 +1,31 @@
+# Build artefacts
+/target
+**/*.rs.bk
+Cargo.lock
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# Runtime / data
+/data
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
+# Local config that may contain secrets
+config.toml
+.env
+.env.*
+!.env.example
+
+# Claude Code
+.claude/settings.local.json
+
+# Logs
+*.log

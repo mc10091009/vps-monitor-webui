@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>vps-monitor — login</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="login-body">
+  <form id="login-form" class="login-card">
+    <h1>vps-monitor</h1>
+    <p class="muted small">SSH-tunnel access only</p>
+    <label>Username<input name="username" autocomplete="username" required /></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required /></label>
+    <button type="submit">Sign in</button>
+    <p class="error small" id="login-err"></p>
+  </form>
+  <script>
+    const f = document.getElementById('login-form');
+    const err = document.getElementById('login-err');
+    f.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      err.textContent = '';
+      const fd = new FormData(f);
+      const body = JSON.stringify({
+        username: fd.get('username'),
+        password: fd.get('password'),
+      });
+      try {
+        const r = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-requested-with': 'fetch' },
+          body,
+        });
+        if (!r.ok) {
+          const j = await r.json().catch(() => ({}));
+          err.textContent = j.error || 'login failed';
+          return;
+        }
+        location.href = '/';
+      } catch (e) {
+        err.textContent = String(e);
+      }
+    });
+  </script>
+</body>
+</html>

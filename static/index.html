@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>vps-monitor</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div id="app" class="hidden">
+    <aside class="nav">
+      <div class="brand">vps-monitor</div>
+      <nav>
+        <a data-tab="overview" class="active">Overview</a>
+        <a data-tab="processes">Processes</a>
+        <a data-tab="pm2">PM2</a>
+        <a data-tab="docker">Docker</a>
+        <a data-tab="services">Services</a>
+        <a data-tab="audit">Audit</a>
+      </nav>
+      <div class="footer">
+        <span id="who">—</span>
+        <button id="logout" class="link">log out</button>
+      </div>
+    </aside>
+
+    <main>
+      <section id="tab-overview" class="tab active">
+        <header><h1>Overview</h1><div id="host" class="muted"></div></header>
+        <div class="grid">
+          <div class="card">
+            <h3>CPU</h3>
+            <div class="big" id="cpu-pct">—</div>
+            <svg class="spark" id="spark-cpu" viewBox="0 0 200 60" preserveAspectRatio="none"></svg>
+            <div class="muted small" id="cpu-cores"></div>
+          </div>
+          <div class="card">
+            <h3>Memory</h3>
+            <div class="big" id="mem-pct">—</div>
+            <svg class="spark" id="spark-mem" viewBox="0 0 200 60" preserveAspectRatio="none"></svg>
+            <div class="muted small" id="mem-detail"></div>
+          </div>
+          <div class="card">
+            <h3>Network</h3>
+            <div class="big" id="net-detail">—</div>
+            <svg class="spark" id="spark-net" viewBox="0 0 200 60" preserveAspectRatio="none"></svg>
+            <div class="muted small" id="net-tot"></div>
+          </div>
+          <div class="card">
+            <h3>Load avg</h3>
+            <div class="big" id="load">—</div>
+            <div class="muted small" id="uptime"></div>
+            <div class="muted small" id="kernel"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Disks</h3>
+          <table id="disks"><thead><tr><th>Mount</th><th>Filesystem</th><th>Used</th><th>Total</th><th>%</th></tr></thead><tbody></tbody></table>
+        </div>
+      </section>
+
+      <section id="tab-processes" class="tab">
+        <header>
+          <h1>Processes</h1>
+          <div class="row">
+            <label>Sort
+              <select id="proc-sort">
+                <option value="cpu">CPU</option>
+                <option value="mem">Memory</option>
+              </select>
+            </label>
+            <label>Top
+              <select id="proc-limit">
+                <option>20</option><option>50</option><option>100</option>
+              </select>
+            </label>
+            <button id="proc-refresh">Refresh</button>
+          </div>
+        </header>
+        <table id="processes"><thead><tr><th>PID</th><th>User</th><th>Name</th><th>CPU %</th><th>Mem</th><th>Command</th></tr></thead><tbody></tbody></table>
+      </section>
+
+      <section id="tab-pm2" class="tab">
+        <header><h1>PM2</h1><button id="pm2-refresh">Refresh</button></header>
+        <div id="pm2-list" class="cards"></div>
+      </section>
+
+      <section id="tab-docker" class="tab">
+        <header><h1>Docker</h1><button id="docker-refresh">Refresh</button></header>
+        <div id="docker-list" class="cards"></div>
+      </section>
+
+      <section id="tab-services" class="tab">
+        <header>
+          <h1>systemd services</h1>
+          <div class="row">
+            <label>Filter
+              <select id="svc-filter">
+                <option value="">all</option>
+                <option value="active">active</option>
+                <option value="failed">failed</option>
+                <option value="inactive">inactive</option>
+              </select>
+            </label>
+            <button id="svc-refresh">Refresh</button>
+          </div>
+        </header>
+        <table id="services"><thead><tr><th>Unit</th><th>Load</th><th>Active</th><th>Sub</th><th>Description</th><th></th></tr></thead><tbody></tbody></table>
+      </section>
+
+      <section id="tab-audit" class="tab">
+        <header><h1>Audit log</h1><button id="audit-refresh">Refresh</button></header>
+        <table id="audit"><thead><tr><th>Time</th><th>User</th><th>IP</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead><tbody></tbody></table>
+      </section>
+    </main>
+
+    <div id="modal" class="modal hidden">
+      <div class="modal-box">
+        <header>
+          <span id="modal-title"></span>
+          <span class="row">
+            <input id="log-filter" placeholder="filter…" />
+            <button id="log-pause">Pause</button>
+            <button id="log-clear">Clear</button>
+            <button id="log-close">Close</button>
+          </span>
+        </header>
+        <pre id="log-output"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

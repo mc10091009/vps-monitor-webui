@@ -1,0 +1,48 @@
+[Unit]
+Description=vps-monitor — lightweight VPS monitoring WebUI
+After=network.target docker.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=vps-monitor
+Group=vps-monitor
+
+# Required for Docker socket access. Remove if you don't use Docker.
+SupplementaryGroups=docker
+
+# Required for journalctl access. systemd-journal lets us read other users' logs.
+SupplementaryGroups=systemd-journal
+
+ExecStart=/usr/local/bin/vps-monitor serve --config /etc/vps-monitor/config.toml
+
+Restart=on-failure
+RestartSec=3s
+LimitNOFILE=4096
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/vps-monitor
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
+
+# Memory
+MemoryMax=200M
+
+[Install]
+WantedBy=multi-user.target
