@@ -89,24 +89,34 @@ echo ">> installing systemd unit"
 install -m 644 "$REPO_DIR/systemd/vps-monitor.service" /etc/systemd/system/
 
 # 5. ensure 'pm2' is reachable from systemd's default PATH.
-#    PM2 is usually installed via nvm/npm in a per-user dir that systemd does
-#    not see. Create a wrapper at /usr/local/bin/pm2 that sets PATH and
-#    delegates to the real binary.
+#    PM2 is usually installed via nvm/fnm/npm in a per-user dir that systemd
+#    does not see. Create a wrapper at /usr/local/bin/pm2 that sets PATH and
+#    delegates to the real binary, then ACL the binary path so the
+#    vps-monitor user can actually traverse + read it.
 PM2_BIN=""
-# (a) common static paths
-for path in \
-    /usr/local/bin/pm2 \
-    /usr/bin/pm2 \
-    /root/.npm-global/bin/pm2 \
-    /root/.nvm/versions/node/*/bin/pm2 \
-    /home/*/.nvm/versions/node/*/bin/pm2 \
-    /home/*/.npm-global/bin/pm2; do
-  if [[ -x "$path" ]]; then
-    PM2_BIN="$path"
-    break
-  fi
-done
-# (b) inherit caller's shell init (nvm.sh) and ask for pm2 path
+# (a) If our wrapper is already there, peel off the real path so we can
+#     ACL it again on every run. We never trust /usr/local/bin/pm2 itself
+#     as the "real" binary because it might be our wrapper.
+if [[ -f /usr/local/bin/pm2 ]] && head -3 /usr/local/bin/pm2 2>/dev/null | grep -q "vps-monitor install.sh"; then
+  PM2_BIN="$(grep -oE 'exec "[^"]+"' /usr/local/bin/pm2 | head -1 | sed 's/^exec "//; s/"$//')"
+fi
+# (b) common static paths (skip /usr/local/bin/pm2 — see above)
+if [[ -z "$PM2_BIN" ]]; then
+  for path in \
+      /usr/bin/pm2 \
+      /root/.npm-global/bin/pm2 \
+      /root/.nvm/versions/node/*/bin/pm2 \
+      /root/.local/share/fnm/node-versions/*/installation/bin/pm2 \
+      /home/*/.nvm/versions/node/*/bin/pm2 \
+      /home/*/.npm-global/bin/pm2 \
+      /home/*/.local/share/fnm/node-versions/*/installation/bin/pm2; do
+    if [[ -x "$path" ]]; then
+      PM2_BIN="$path"
+      break
+    fi
+  done
+fi
+# (c) inherit caller's shell init (nvm.sh / fnm env) and ask for pm2 path
 if [[ -z "$PM2_BIN" ]]; then
   for who in "${SUDO_USER:-}" root; do
     [[ -z "$who" ]] && continue
