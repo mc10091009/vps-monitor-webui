@@ -133,6 +133,36 @@ exec "$PM2_BIN_REAL" "\$@"
 EOF
     chmod 755 /usr/local/bin/pm2
   fi
+
+  # If pm2 lives under /root or /home/<user>, vps-monitor cannot traverse the
+  # default 0700 home dirs. Grant the minimum ACL needed.
+  case "$PM2_BIN_REAL" in
+    /root/*|/home/*)
+      if command -v setfacl >/dev/null; then
+        echo ">> granting vps-monitor read/execute access on pm2 install path"
+        # +x on every ancestor so we can walk down to the binary
+        walk="$(dirname "$PM2_BIN_REAL")"
+        while [[ "$walk" != "/" && -n "$walk" ]]; do
+          setfacl -m u:"$USER_NAME":x "$walk" 2>/dev/null || true
+          walk="$(dirname "$walk")"
+        done
+        # Find the node install root (directory containing bin/node or lib/node_modules)
+        # and grant recursive read+execute there.
+        node_root="$(dirname "$PM2_BIN_REAL")"
+        while [[ "$node_root" != "/" && -n "$node_root" ]]; do
+          if [[ -x "$node_root/bin/node" || -d "$node_root/lib/node_modules" ]]; then
+            setfacl -R  -m u:"$USER_NAME":rX "$node_root" 2>/dev/null || true
+            setfacl -dR -m u:"$USER_NAME":rX "$node_root" 2>/dev/null || true
+            echo "   -> ACL set recursively on $node_root"
+            break
+          fi
+          node_root="$(dirname "$node_root")"
+        done
+      else
+        echo "   ! setfacl missing — pm2 may still fail. install acl: apt install -y acl"
+      fi
+      ;;
+  esac
 else
   echo ">> pm2 not found anywhere — PM2 tab will be empty until you install pm2 (npm i -g pm2)"
 fi
