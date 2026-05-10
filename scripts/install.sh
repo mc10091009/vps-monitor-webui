@@ -13,15 +13,24 @@ CFG_DIR="/etc/vps-monitor"
 DATA_DIR="/var/lib/vps-monitor"
 USER_NAME="vps-monitor"
 
-# 1. build dependencies (rusqlite bundled needs a C toolchain)
-if ! command -v cc >/dev/null && ! command -v gcc >/dev/null; then
-  echo ">> C compiler not found — installing build essentials…"
-  if   command -v apt-get >/dev/null; then apt-get update && apt-get install -y build-essential pkg-config curl
-  elif command -v dnf     >/dev/null; then dnf install  -y gcc make pkgconfig curl
-  elif command -v yum     >/dev/null; then yum install  -y gcc make pkgconfig curl
-  elif command -v apk     >/dev/null; then apk add --no-cache build-base pkgconfig curl
+# 1. build dependencies (rusqlite bundled needs a C toolchain).
+#    Also install 'acl' here — later steps need setfacl to grant the
+#    vps-monitor user read access to per-user PM2 homes / node installs.
+NEED_PKGS=()
+if ! command -v cc >/dev/null && ! command -v gcc >/dev/null; then NEED_PKGS+=("compiler"); fi
+if ! command -v setfacl >/dev/null;                              then NEED_PKGS+=("acl"); fi
+if ! command -v curl >/dev/null;                                 then NEED_PKGS+=("curl"); fi
+
+if [[ ${#NEED_PKGS[@]} -gt 0 ]]; then
+  echo ">> installing required system packages: ${NEED_PKGS[*]}"
+  if   command -v apt-get >/dev/null; then
+    apt-get update
+    apt-get install -y build-essential pkg-config curl acl
+  elif command -v dnf     >/dev/null; then dnf install  -y gcc make pkgconfig curl acl
+  elif command -v yum     >/dev/null; then yum install  -y gcc make pkgconfig curl acl
+  elif command -v apk     >/dev/null; then apk add --no-cache build-base pkgconfig curl acl
   else
-    echo "could not find a known package manager (apt/dnf/yum/apk). install gcc, make, pkg-config, curl manually." >&2
+    echo "could not find a known package manager (apt/dnf/yum/apk). install gcc, make, pkg-config, curl, acl manually." >&2
     exit 1
   fi
 fi
